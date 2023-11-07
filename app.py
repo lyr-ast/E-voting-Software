@@ -5,6 +5,7 @@ import csv
 from os.path import isfile
 from PIL import Image
 import sqlite3
+from CTkTable import *
 
 
 #main voting function loop
@@ -14,16 +15,17 @@ def vote_e():
 
     #adds the selected option to a list and goes to the next frame when the next button is clicked 
     def next():
+        next_button_state(st=DISABLED)
         nonlocal curr
         res.append(choose.get())
         frames[curr].pack_forget()
         curr+=1
         frames[curr].pack(fill="both", expand=True)
-      
-
+        
     
     #adds the list with the selected options to the database and gives option to vote again
     def submit():
+        next_button_state(st=DISABLED)
         res.append(choose.get())
         msg = CTkMessagebox(master=vt, title="Vote Successful!", message="Vote Successful!\nDo you want to vote again?", icon="check", option_1="Yes", option_2="No")
         
@@ -37,11 +39,11 @@ def vote_e():
             cursor.execute("update main set count = count + 1 where name = '{}'".format(i))
         conn.commit()
         
+        
     #checks if the checkbox is selected and allows the user to click the button and go to the next option
-    def next_button_state(*args):    
-        if choose.get():
-            for widgets in frames[curr].winfo_children():
-                widgets.configure(state=NORMAL)
+    def next_button_state(*args, st=NORMAL):   
+        widgets = frames[curr].winfo_children()[-1] 
+        widgets.configure(state=st)
 
     #initially shows the first frame initially and after choosing to vote again in submit it starts the vote loop
     def vto():
@@ -125,41 +127,69 @@ def vote_e():
 
 #dispalys the results of the voting
 def result_e():
+
+    #Clears count of votes
+    def clearres():
+        msg = CTkMessagebox(master=root, title="Warning message!", message="Do you want to clear all of the votes?", icon="warning", option_1="Clear all votes", option_2="Go back")
+        if msg.get() == "Go back":
+            return
+        else:
+            cursor.execute("update main set count=0")
+            conn.commit()
+            re.destroy()
+            result_e()
+
+    #plots a graph on choosing a position 
+    def pltgrph():
+        vals = posdict[dropdn.get()]
+        x = [val[0] for val in vals]
+        y = [val[1] for val in vals]
+        plt.bar(x, y)
+        plt.title(dropdn.get())
+        plt.xlabel('Names')
+        plt.ylabel('Number of votes')
+        plt.show()
+       
+
     re = CTkToplevel(root)
     re.after(10, re.lift)
     re.geometry('1920x1080')
     re.state('zoomed')
     re.title('Results')
-    cursor.execute("SELECT DISTINCT position FROM main")
-    positions = cursor.fetchall()
 
-    scf = CTkScrollableFrame(re, fg_color="transparent", width=1920, height=1080)
-    scf.pack()
-    
- 
+    cursor.execute("SELECT DISTINCT position FROM main")
+    positions = [row[0] for row in cursor.fetchall()]
+
+    tableval = []
+    posdict = {}
 
     for i in positions:
-        posframe = CTkFrame(scf)
-        posframe.pack(pady=10)
-
-        position_label = CTkLabel(posframe, text=i[0], font=('Futura', 21, 'bold'))
-        position_label.grid(row=0, column=0, columnspan=2)
-
-        name_header = CTkLabel(posframe, text="Name", font=('Futura', 19, 'bold'))
-        name_header.grid(row=1, column=0, padx=10)
-
-        count_header = CTkLabel(posframe, text="Count", font=('Futura', 19, 'bold'))
-        count_header.grid(row=1, column=1, padx=10)
-
-        cursor.execute("SELECT name, count FROM main WHERE position='{}'".format(i[0]))
+        namecount = []
+        cursor.execute("SELECT name, count FROM main WHERE position='{}'".format(i))
         names_counts = cursor.fetchall()
+        row = [i, "Votes"]
+        tableval.append(row)
+        for name, count in names_counts:
+            row = [name, count]
+            tableval.append(row)
+            namecount.append((name, count))
 
-        for i, (name, count) in enumerate(names_counts):
-            name_label = CTkLabel(posframe, text=name, padx=10, font=('Futura', 17))
-            name_label.grid(row=i + 2, column=0)
-            count_label = CTkLabel(posframe, text=count, padx=10, font=('Futura', 17))
-            count_label.grid(row=i + 2, column=1)
-        
+        posdict[i] = namecount
+
+
+    table = CTkTable(master=re, row=len(tableval), column=2, values=tableval)
+    table.pack(fill="both", expand=True)
+
+    for c, i in enumerate(tableval):
+        if i[1] == "Votes":
+            table.edit_row(c, fg_color="#e0dcd4")
+         
+    CTkButton(re, text="Clear all votes", command=clearres).pack(padx=10, pady=10, side=RIGHT)
+
+    dropdn = CTkComboBox(re, values=positions)
+    dropdn.pack(padx=10, pady=10, side=LEFT)
+    
+    CTkButton(re, text="Plot graph", command=pltgrph).pack(padx=10, pady=10, side=LEFT)
 
 
 
@@ -233,6 +263,8 @@ def add_e():
         with open (file_path, newline="") as cf:
             cr = csv.reader(cf)
             for i in cr:
+                if tuple(i) == None or len(tuple(i)) != 2:
+                    continue
                 cursor.execute("insert into main (position, name) values{}".format(tuple(i)))
 
         conn.commit()
