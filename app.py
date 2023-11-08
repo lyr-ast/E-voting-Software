@@ -6,6 +6,7 @@ from os.path import isfile
 from PIL import Image
 import sqlite3
 from CTkTable import *
+import matplotlib.pyplot as plt
 
 
 #main voting function loop
