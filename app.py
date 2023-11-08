@@ -1,12 +1,12 @@
 from customtkinter import *
+import sqlite3
 from CTkMessagebox import CTkMessagebox
 from tkinter.ttk import *
 import csv
 from os.path import isfile
 from PIL import Image
-import sqlite3
-from CTkTable import *
 import matplotlib.pyplot as plt
+from CTkTable import *
 
 
 #main voting function loop
@@ -85,12 +85,16 @@ def vote_e():
         frame = CTkFrame(vt, fg_color="transparent")
         postitle = CTkLabel(frame, text=f"For the position of {i}", font=('Futura', 30, 'bold'))
         postitle.grid(row=0, column=0, pady=15, columnspan=2)
+        postitle.pack(side=TOP, pady=10)
 
-        frame.grid_columnconfigure(0, weight=1)
-        frame.grid_columnconfigure(1, weight=1)
 
-        for c, j in enumerate(position_dict[i]):
-            votebutton = CTkRadioButton(frame, text=j, value=j, variable=choose, font=('Futura', 25))
+        for j in position_dict[i]:
+
+            vtfrm = CTkFrame(frame, border_width=2, border_color="black")
+            votebutton = CTkRadioButton(vtfrm, text=j, value=j, variable=choose, font=('Futura', 25))
+
+            vtfrm.grid_columnconfigure(0, weight=1)
+            vtfrm.grid_columnconfigure(1, weight=1)
 
             if useimg:
                 try:
@@ -98,29 +102,28 @@ def vote_e():
                 except:
                     img = CTkImage(Image.open("images/def.png"), size=(100, 100))
 
-                imglab = CTkLabel(frame, text="", image=img)
-                votebutton.grid(row=c+1, column=0, pady=20, padx=10, sticky=E)
-                imglab.grid(row=c+1, column=1, pady=10, sticky=W)
+                imglab = CTkLabel(vtfrm, text="", image=img)
+                votebutton.grid(row = 0, column = 1, pady=15, padx=10, sticky=W)
+                imglab.grid(row = 0, column = 0, pady=5, padx=10, sticky=E)
 
             else:
-                votebutton.grid(row=c+1, column=0, pady=20, padx=10, columnspan=2)
+                
+                votebutton.pack(padx=10, pady=50)
+            vtfrm.pack(pady=5, padx=200, fill=X, expand=True)
 
 
-            frame.grid_rowconfigure(c+1, weight=1)
             
 
         if len(frames)+1 == len(position_dict): 
             confirmbutton = CTkButton(frame, text="Submit", command=lambda: submit(), state=DISABLED, height=50, width=150)
-            confirmbutton.grid(row=c+2, column=1, padx=20, pady=20, sticky=SE)
+            confirmbutton.pack(padx=20, pady=20, anchor=E, side=BOTTOM)
         else:
             switchbutton = CTkButton(frame, text="Next", command=lambda: next(), state=DISABLED, height=50, width=150)  
-            switchbutton.grid(row=c+2, column=1, padx=20, pady=20, sticky=SE) 
-            frame.grid_rowconfigure(c+2, weight=2)
-    
+            switchbutton.pack(padx=20, pady=20, anchor=E, side=BOTTOM) 
+      
 
         frames.append(frame)
         
-
 
     vto()
     choose.trace_add("write", next_button_state)
@@ -131,7 +134,7 @@ def result_e():
 
     #Clears count of votes
     def clearres():
-        msg = CTkMessagebox(master=root, title="Warning message!", message="Do you want to clear all of the votes?", icon="warning", option_1="Clear all votes", option_2="Go back")
+        msg = CTkMessagebox(master=root, title="Warning message!", message="Do you want to Clear all of the votes?", icon="warning", option_1="Clear all votes", option_2="Go back")
         if msg.get() == "Go back":
             return
         else:
@@ -183,7 +186,7 @@ def result_e():
 
     for c, i in enumerate(tableval):
         if i[1] == "Votes":
-            table.edit_row(c, fg_color="#e0dcd4")
+            table.edit_row(c, fg_color="#e0dcd4", border_width=2, font=('Futura', 15, "bold"))
          
     CTkButton(re, text="Clear all votes", command=clearres).pack(padx=10, pady=10, side=RIGHT)
 
@@ -288,7 +291,7 @@ def add_e():
 
 
     ad = CTkToplevel(root)
-    ad.geometry('850x600')
+    ad.geometry('850x700')
     ad.after(10, ad.lift)
     ad.title('Create a new poll')
 
