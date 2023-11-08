@@ -28,13 +28,8 @@ def vote_e():
     def submit():
         next_button_state(st=DISABLED)
         res.append(choose.get())
-        msg = CTkMessagebox(master=vt, title="Vote Successful!", message="Vote Successful!\nDo you want to vote again?", icon="check", option_1="Yes", option_2="No")
-        
-        if msg.get() == "Yes":
-            frames[curr].pack_forget()
-            vto()
-        else:
-            vt.destroy()
+        frames[curr].pack_forget()
+        successfrm.pack(fill="both", expand=True)
         
         for i in res:
             cursor.execute("update main set count = count + 1 where name = '{}'".format(i))
@@ -46,17 +41,23 @@ def vote_e():
         widgets = frames[curr].winfo_children()[-1] 
         widgets.configure(state=st)
 
-    #initially shows the first frame initially and after choosing to vote again in submit it starts the vote loop
+    #called initially to show the first frame and after choosing to vote again it starts the vote loop again
     def vto():
         nonlocal curr
         curr = 0
-
         try:
             frames[curr].pack(fill="both", expand=True)
         except:
             vt.destroy()
             CTkMessagebox(master=root, title="Warning message!", message="No candidates added", icon="warning", option_1="Ok")
 
+    #called when user clicks vote again in the final screen
+    def vtoagain():
+        msg = CTkMessagebox(master=vt, title="Vote again?", message="Do you want to vote again?", icon="question", option_1="Yes", option_2="No")
+        
+        if msg.get() == "Yes":
+            successfrm.pack_forget()
+            vto()
 
     cursor.execute("select name, position from main")
     position_dict = {}
@@ -79,6 +80,17 @@ def vote_e():
     choose = StringVar()
     frames = []
     
+    successfrm = CTkFrame(vt)
+    successfrm.grid_columnconfigure(0, weight=1)
+    successfrm.grid_columnconfigure(1, weight=1)
+    successfrm.grid_rowconfigure(0, weight=1)
+    successfrm.grid_rowconfigure(1, weight=1)
+    successfrm.grid_rowconfigure(2, weight=1)
+    CTkLabel(successfrm, text="Vote Successfully Submitted", font=('Futura', 100)).grid(pady=10, row=0, column=0, columnspan=2, sticky=S)
+    CTkLabel(successfrm, text="Thanks For Voting!!", font=('Futura', 100)).grid(pady=10, row=1, column=0, columnspan=2, sticky=N)
+    CTkButton(successfrm, text="Vote again", command=vtoagain, height=50, width=150).grid(row=2, column=1, padx=20, pady=20, sticky=SE)
+    CTkButton(successfrm, text="Exit", command=lambda: vt.destroy(), height=50, width=150).grid(row=2, column=0, padx=20, pady=20, sticky=SW)
+
 
     for i in position_dict:
 
@@ -93,9 +105,6 @@ def vote_e():
             vtfrm = CTkFrame(frame, border_width=2, border_color="black")
             votebutton = CTkRadioButton(vtfrm, text=j, value=j, variable=choose, font=('Futura', 25))
 
-            vtfrm.grid_columnconfigure(0, weight=1)
-            vtfrm.grid_columnconfigure(1, weight=1)
-
             if useimg:
                 try:
                     img = CTkImage(Image.open(f"images/{j}.png"), size=(100, 100))
@@ -103,15 +112,17 @@ def vote_e():
                     img = CTkImage(Image.open("images/def.png"), size=(100, 100))
 
                 imglab = CTkLabel(vtfrm, text="", image=img)
-                votebutton.grid(row = 0, column = 1, pady=15, padx=10, sticky=W)
-                imglab.grid(row = 0, column = 0, pady=5, padx=10, sticky=E)
+
+                vtfrm.grid_columnconfigure(1, weight=1)
+                vtfrm.grid_columnconfigure(0, weight=1) 
+                   
+                votebutton.grid(row = 0, column = 1, pady=10, padx=10, sticky=W)
+                imglab.grid(row = 0, column = 0, pady=10, padx=10, sticky=E)
 
             else:
                 
                 votebutton.pack(padx=10, pady=50)
-            vtfrm.pack(pady=5, padx=200, fill=X, expand=True)
-
-
+            vtfrm.pack(pady=5, padx=200, fill=X)
             
 
         if len(frames)+1 == len(position_dict): 
@@ -181,8 +192,12 @@ def result_e():
         posdict[i] = namecount
 
 
-    table = CTkTable(master=re, row=len(tableval), column=2, values=tableval)
+    scrl = CTkScrollableFrame(re)
+    scrl.pack(fill="both", expand=True)
+    table = CTkTable(master=scrl, row=len(tableval), column=2, values=tableval)
     table.pack(fill="both", expand=True)
+
+
 
     for c, i in enumerate(tableval):
         if i[1] == "Votes":
@@ -291,9 +306,9 @@ def add_e():
 
 
     ad = CTkToplevel(root)
-    ad.geometry('850x700')
+    ad.geometry('850x650')
     ad.after(10, ad.lift)
-    ad.title('Create a new poll')
+    ad.title('Edit details of poll')
 
     posvar = StringVar()
     namevar = StringVar()
@@ -345,7 +360,7 @@ def add_e():
     deletebutton.grid(row=8, column=0, padx=10, pady=5)
     proceedbutton.grid(row=8, column=1, padx=10, pady=5)
     csvbutton.grid(row=8, column=2, padx=10, pady=5)
-    listbox.grid(row=11, column=0, columnspan=4, pady=10)
+    listbox.grid(row=11, column=0, columnspan=4, pady=20)
     imgswitch.grid(row=8, column=3, padx=10, pady=5)
 
     
